@@ -1,0 +1,49 @@
+pipeline{
+	agent any
+	environment {
+		DOCKERHUB_CREDENTIALS=credentials('dockerhub-cred')
+	}
+	stages {
+		stage('Build') {
+
+			steps {
+				sh 'docker build -t wro.io/Made-Wro-v2-image:latest .'
+			}
+		}
+		stage('Login') {
+			steps {
+				sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+			}
+		}
+		stage('Push') {
+
+			steps {
+				sh 'docker push wro.io/Made-Wro-v2-image:latest'
+			}
+		}
+		stage('Deploy to K8s')
+		{
+			steps{
+				sshagent(['k8s-jenkins'])
+				{
+					script{
+						try{
+							sh 'ssh ${username}@${host} kubectl apply -f /resources/deployment/Made-Wro-v2.yaml'
+							sh 'ssh ${username}@${host} kubectl apply -f /resources/deployment/Made-Wro-v2-configmap.yaml'
+							sh 'ssh ${username}@${host} kubectl apply -f /resources/deployment/Made-Wro-v2-deployment.yaml'
+							sh 'ssh ${username}@${host} kubectl apply -f /resources/deployment/Made-Wro-v2-autoscaler.yaml'
+							}catch(error)
+							{
+
+							}
+					}
+				}
+			}
+		}
+	}
+	post {
+		always {
+			sh 'docker logout'
+		}
+	}
+}

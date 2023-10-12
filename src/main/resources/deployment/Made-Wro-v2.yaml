@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: Made-Wro-v2
+  labels:
+    app: Made-Wro-v2
+    service: Made-Wro-v2
+spec:
+  ports:
+  - name: http-Made-Wro-v2
+    port: 80
+    targetPort: 12000
+  selector:
+    app: Made-Wro-v2
